@@ -1,6 +1,7 @@
 streamlit
 pandas
 plotly
+openpyxl
 matplotlib
 google-auth
 google-auth-oauthlib
