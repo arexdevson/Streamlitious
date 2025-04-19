@@ -38,17 +38,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import plotly.express as px
 import matplotlib.pyplot as plt
-
-
-import streamlit as st
-import pandas as pd
-import time
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-import matplotlib.pyplot as plt
+import json
 
 # -------------------- Parâmetros --------------------
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -69,6 +59,21 @@ refresh_interval = 10
 # The ID and range of a sample spreadsheet.
 SAMPLE_SPREADSHEET_ID = "1nMDOfJ5vd6fhAqT-vxlAIKMqmbypOhEs6RS2qjduqyE"
 SAMPLE_RANGE_NAME = f"Vendas!A:B"
+
+@st.cache_resource
+def get_credentials():
+    creds = None
+    # Usa o conteúdo do secrets
+    google_creds = json.loads(st.secrets["GOOGLE_CREDS"])
+
+    # Salva temporariamente como um arquivo
+    with open("credentials_temp.json", "w") as f:
+        json.dump(google_creds, f)
+
+    flow = InstalledAppFlow.from_client_secrets_file("credentials_temp.json", SCOPES)
+    creds = flow.run_local_server(port=0)
+
+    return creds
 
 def main():
 
