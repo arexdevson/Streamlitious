@@ -40,6 +40,21 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 
 
+import streamlit as st
+import pandas as pd
+import time
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+import matplotlib.pyplot as plt
+
+# -------------------- Parâmetros --------------------
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+SPREADSHEET_ID = "1nMDOfJ5vd6fhAqT-vxlAIKMqmbypOhEs6RS2qjduqyE"
+RANGE_NAME = "Vendas!A:B"
+
 #listas pra df
 df_apuracao = []
 df_desc = []
@@ -171,7 +186,14 @@ def streaming():
     # Espera pelo intervalo de atualização
     time.sleep(refresh_interval)
 
-    st.experimental_rerun()
+    # Inicializa session_state
+    if "last_refresh" not in st.session_state:
+        st.session_state.last_refresh = time.time()
+
+    # Força a atualização após o tempo definido
+    if time.time() - st.session_state.last_refresh > refresh_interval:
+        st.session_state.last_refresh = time.time()
+        st.experimental_rerun()
 
 
 streaming()
