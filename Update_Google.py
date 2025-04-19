@@ -75,69 +75,32 @@ def get_credentials():
 
     return creds
 
-def main():
+def read_google_sheets():
+    try:
+        creds = get_credentials()
+        service = build("sheets", "v4", credentials=creds)
 
-  #Login
-  """Shows basic usage of the Sheets API.
-  Prints values from a sample spreadsheet.
-  """
-  creds = None
-  # The file token.json stores the user's access and refresh tokens, and is
-  # created automatically when the authorization flow completes for the first
-  # time.
-  if os.path.exists("token.json"):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-  # If there are no (valid) credentials available, let the user log in.
-  if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-      creds.refresh(Request())
-    else:
-      flow = InstalledAppFlow.from_client_secrets_file(
-          "credentials.json", SCOPES
-      )
-      creds = flow.run_local_server(port=0)
-    # Save the credentials for the next run
-    with open("token.json", "w") as token:
-      token.write(creds.to_json())
+        sheet = service.spreadsheets()
+        result = sheet.values().get(
+            spreadsheetId=SAMPLE_SPREADSHEET_ID,
+            range=SAMPLE_RANGE_NAME
+        ).execute()
 
-  # Ações na Plan
-  try:
-    service = build("sheets", "v4", credentials=creds)
+        values = result.get("values", [])
+        if not values:
+            return pd.DataFrame()
 
-    # Call the Sheets API = ler informações do google sheets
-    sheet = service.spreadsheets()
-    result = (
-        sheet.values()
-        .get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=SAMPLE_RANGE_NAME) #get = pegar dados / update = ajustar-editar algo
-        .execute()
-    )
+        df = pd.DataFrame(values[1:], columns=values[0])
+        df["Data"] = pd.to_datetime(df["Data"])
+        df["Vendas"] = pd.to_numeric(df["Vendas"], errors="coerce")
+        return df
 
-    # #testes
-    # print(result['range'])
-    # print(result['majorDimension'])
-    valores = result['values']
-    # print(valores)
-
-    for linha in valores:
-        df_apuracao.append(linha)
-    print(df_apuracao)
-    dados_apuracao = pd.DataFrame(df_apuracao[1:],columns=['Data','Vendas'])
-    dados_apuracao.to_excel('apurado.xlsx', sheet_name="apurado", index=False)
-
-  except HttpError as err:
-    print(err)
-
-
-#main()
-
-# Define a função para atualizar a página
-
-#@st.cache(allow_output_mutation=True)
-#@st.cache(suppress_st_warning=True)
-
+    except HttpError as err:
+        st.error(f"Erro ao acessar Google Sheets: {err}")
+        return pd.DataFrame()
 
 def teste():
-    main()
+    read_google_sheets()
     time.sleep(3)
     df_venda = pd.read_excel('apurado.xlsx')
     df_venda.info()
@@ -150,7 +113,7 @@ def teste():
     #print(f"O total de vendas até o momento é: {df_hoje['Vendas'].sum():.2f}")
 
 def streaming():
-    main()
+    read_google_sheets()
     time.sleep(3)
     df_venda = pd.read_excel('apurado.xlsx')
     # Obtendo a data de hoje sem horário
